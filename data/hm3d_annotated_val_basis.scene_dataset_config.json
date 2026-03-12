@@ -1,0 +1,73 @@
+{
+  "stages": {
+    "paths": {
+      ".glb": [
+        "scene_datasets/hm3d/val/00800-TEEsavR23oF/*.basis.glb",
+        "scene_datasets/hm3d/val/00802-wcojb4TFT35/*.basis.glb",
+        "scene_datasets/hm3d/val/00813-svBbv1Pavdk/*.basis.glb",
+        "scene_datasets/hm3d/val/00814-p53SfW6mjZe/*.basis.glb",
+        "scene_datasets/hm3d/val/00820-mL8ThkuaVTM/*.basis.glb",
+        "scene_datasets/hm3d/val/00824-Dd4bFSTQ8gi/*.basis.glb",
+        "scene_datasets/hm3d/val/00829-QaLdnwvtxbs/*.basis.glb",
+        "scene_datasets/hm3d/val/00832-qyAac8rV8Zk/*.basis.glb",
+        "scene_datasets/hm3d/val/00835-q3zU7Yy5E5s/*.basis.glb",
+        "scene_datasets/hm3d/val/00839-zt1RVoi7PcG/*.basis.glb",
+        "scene_datasets/hm3d/val/00843-DYehNKdT76V/*.basis.glb",
+        "scene_datasets/hm3d/val/00848-ziup5kvtCCR/*.basis.glb",
+        "scene_datasets/hm3d/val/00853-5cdEh9F2hJL/*.basis.glb",
+        "scene_datasets/hm3d/val/00873-bxsVRursffK/*.basis.glb",
+        "scene_datasets/hm3d/val/00876-mv2HUxq3B53/*.basis.glb",
+        "scene_datasets/hm3d/val/00877-4ok3usBNeis/*.basis.glb",
+        "scene_datasets/hm3d/val/00878-XB4GS9ShBRE/*.basis.glb",
+        "scene_datasets/hm3d/val/00880-Nfvxx8J5NCo/*.basis.glb",
+        "scene_datasets/hm3d/val/00890-6s7QHgap2fW/*.basis.glb",
+        "scene_datasets/hm3d/val/00891-cvZr5TUy5C5/*.basis.glb"
+      ]
+    },
+    "default_attributes": {
+      "shader_type": "flat",
+      "up": [
+        0,
+        0,
+        1
+      ],
+      "front": [
+        0,
+        1,
+        0
+      ],
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "semantic_descriptor_filename": "%%CONFIG_NAME_AS_ASSET_FILENAME%%_semantic.txt",
+      "semantic_asset": "%%CONFIG_NAME_AS_ASSET_FILENAME%%_semantic.ply",
+      "has_semantic_textures": true
+    }
+  },
+  "objects": {
+    "paths": {
+      ".object_config.json": [
+        "objects/"
+      ]
+    }
+  },
+  "light_setups": {},
+  "scene_instances": {
+    "paths": {
+      ".scene_instance.json": [
+        "scene_datasets/hm3d/val/00800-TEEsavR23oF/",
+        "scene_datasets/hm3d/val/00802-wcojb4TFT35/",
+        "scene_datasets/hm3d/val/00813-svBbv1Pavdk/",
+        "scene_datasets/hm3d/val/00814-p53SfW6mjZe/",
+        "scene_datasets/hm3d/val/00820-mL8ThkuaVTM/",
+        "scene_datasets/hm3d/val/00824-Dd4bFSTQ8gi/",
+        "scene_datasets/hm3d/val/00829-QaLdnwvtxbs/",
+        "scene_datasets/hm3d/val/00832-qyAac8rV8Zk/",
+        "scene_datasets/hm3d/val/00835-q3zU7Yy5E5s/",
+        "scene_datasets/hm3d/val/00839-zt1RVoi7PcG/"
+      ]
+    }
+  }
+}

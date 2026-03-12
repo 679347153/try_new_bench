@@ -1,0 +1,194 @@
+{
+    "stage_instance": {
+        "template_name": "TEEsavR23oF.basis.glb"
+    },
+    "object_instances": [
+        {
+            "template_name": "round_wooden_table_01_4k",
+            "translation": [
+                3.0,
+                0.1,
+                -5.5
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "motion_type": "STATIC"
+        },
+        {
+            "template_name": "horse_statue_01_4k",
+            "translation": [
+                -9.5,
+                0.7,
+                -0.2
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "motion_type": "STATIC",
+            "semantic_id": 1001
+        },
+        {
+            "template_name": "wooden_table_02_4k",
+            "translation": [
+                -4.0,
+                3.16,
+                -2.0
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "motion_type": "STATIC"
+        },
+        {
+            "template_name": "horse_statue_01_4k",
+            "translation": [
+                -4.0,
+                3.76,
+                -2.0
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "motion_type": "STATIC",
+            "semantic_id": 1003
+        },
+        {
+            "template_name": "round_wooden_table_01_4k",
+            "translation": [
+                -1.7,
+                3.26,
+                -7.0
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "motion_type": "STATIC"
+        },
+        {
+            "template_name": "horse_statue_01_4k",
+            "translation": [
+                -1.7,
+                3.96,
+                -7.0
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "motion_type": "STATIC",
+            "semantic_id": 1005
+        },
+        {
+            "template_name": "horse_statue_01_4k",
+            "translation": [
+                3.0,
+                0.7,
+                -5.5
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "motion_type": "STATIC",
+            "semantic_id": 1006
+        },
+        {
+            "template_name": "wooden_table_02_4k",
+            "translation": [
+                -9.5,
+                0.1,
+                -0.2
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "motion_type": "STATIC"
+        },
+        {
+            "template_name": "side_table_tall_01_4k",
+            "translation": [
+                -2.3,
+                0.1,
+                -1.5
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "motion_type": "STATIC"
+        },
+        {
+            "template_name": "antique_ceramic_vase_01_4k",
+            "translation": [
+                -2.3,
+                0.67,
+                -1.5
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "motion_type": "STATIC",
+            "semantic_id": 1009
+        },
+        {
+            "template_name": "side_table_tall_01_4k",
+            "translation": [
+                -6.8,
+                3.16,
+                -3.8
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "motion_type": "STATIC"
+        },
+        {
+            "template_name": "antique_ceramic_vase_01_4k",
+            "translation": [
+                -6.8,
+                3.79,
+                -3.8
+            ],
+            "rotation": [
+                1,
+                0,
+                0,
+                0
+            ],
+            "motion_type": "STATIC",
+            "semantic_id": 1011
+        }
+    ],
+    "default_lighting": "no_lights"
+}

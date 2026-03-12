@@ -1,0 +1,217 @@
+{
+  "stage_instance": {
+    "template_name": "data/scene_datasets/hm3d/val/00839-zt1RVoi7PcG/zt1RVoi7PcG.basis.glb"
+  },
+  "object_instances": [
+    {
+      "template_name": "wooden_table_02_4k",
+      "translation": [
+        1.5,
+        0.1,
+        3.2
+      ],
+      "rotation": [
+        0.5253219888177297,
+        0.0,
+        -0.8509035245341184,
+        0.0
+      ],
+      "motion_type": "STATIC",
+      "shader_type": "material",
+      "semantic_id": 1000
+    },
+    {
+      "template_name": "horse_statue_01_4k",
+      "translation": [
+        1.5,
+        0.7,
+        3.0
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_type": "STATIC",
+      "shader_type": "material",
+      "semantic_id": 1001,
+      "id": 1001
+    },
+    {
+      "template_name": "side_table_tall_01_4k",
+      "translation": [
+        -0.7,
+        0.2,
+        5.3
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_type": "STATIC",
+      "shader_type": "material",
+      "semantic_id": 1002
+    },
+    {
+      "template_name": "antique_ceramic_vase_01_4k",
+      "translation": [
+        -0.7,
+        0.77,
+        5.3
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_type": "STATIC",
+      "shader_type": "material",
+      "semantic_id": 1003,
+      "id": 1003
+    },
+    {
+      "template_name": "round_wooden_table_01_4k",
+      "translation": [
+        1.8,
+        0.05,
+        11.3
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_type": "STATIC",
+      "shader_type": "material",
+      "semantic_id": 1004
+    },
+    {
+      "template_name": "chess_set_4k",
+      "translation": [
+        1.8,
+        0.65,
+        11.3
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_type": "STATIC",
+      "shader_type": "material",
+      "semantic_id": 1005,
+      "id": 1005
+    },
+    {
+      "template_name": "wooden_table_02_4k",
+      "translation": [
+        -4.5,
+        -2.88,
+        0.3
+      ],
+      "rotation": [
+        0.5253219888177297,
+        0.0,
+        -0.8509035245341184,
+        0.0
+      ],
+      "motion_type": "STATIC",
+      "shader_type": "material",
+      "semantic_id": 1006
+    },
+    {
+      "template_name": "horse_statue_01_4k",
+      "translation": [
+        -4.5,
+        -2.28,
+        0.3
+      ],
+      "rotation": [
+        0.5253219888177297,
+        0.0,
+        -0.8509035245341184,
+        0.0
+      ],
+      "motion_type": "STATIC",
+      "shader_type": "material",
+      "semantic_id": 1007,
+      "id": 1007
+    },
+    {
+      "template_name": "side_table_tall_01_4k",
+      "translation": [
+        -1.0,
+        -2.88,
+        5.5
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_type": "STATIC",
+      "shader_type": "material",
+      "semantic_id": 1008
+    },
+    {
+      "template_name": "antique_ceramic_vase_01_4k",
+      "translation": [
+        -1.0,
+        -2.26,
+        5.5
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_type": "STATIC",
+      "shader_type": "material",
+      "semantic_id": 1009,
+      "id": 1009
+    },
+    {
+      "template_name": "round_wooden_table_01_4k",
+      "translation": [
+        6.5,
+        -2.88,
+        10.8
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_type": "STATIC",
+      "shader_type": "material",
+      "semantic_id": 1010
+    },
+    {
+      "template_name": "chess_set_4k",
+      "translation": [
+        6.5,
+        -2.3,
+        10.8
+      ],
+      "rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motion_type": "STATIC",
+      "shader_type": "material",
+      "semantic_id": 1011,
+      "id": 1011
+    }
+  ]
+}

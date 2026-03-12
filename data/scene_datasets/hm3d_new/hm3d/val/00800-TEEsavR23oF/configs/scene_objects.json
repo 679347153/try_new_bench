@@ -1,0 +1,186 @@
+{
+  "scene": "/home/adminer/seap_test/data/00800-TEEsavR23oF/TEEsavR23oF.basis.glb",
+  "timestamp": 1769257610.9405675,
+  "objects": [
+    {
+      "id": 0,
+      "name": "Round Wooden Table 01",
+      "model_id": "round_wooden_table_01_4k",
+      "position": [
+        3.0,
+        0.1,
+        -5.5
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Horse Statue 01",
+      "model_id": "horse_statue_01_4k",
+      "position": [
+        -9.5,
+        0.7,
+        -0.2
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Wooden Table 02",
+      "model_id": "wooden_table_02_4k",
+      "position": [
+        -4.0,
+        3.16,
+        -2.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Horse Statue 01",
+      "model_id": "horse_statue_01_4k",
+      "position": [
+        -4.0,
+        3.76,
+        -2.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Round Wooden Table 01",
+      "model_id": "round_wooden_table_01_4k",
+      "position": [
+        -1.7,
+        3.26,
+        -7.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Horse Statue 01",
+      "model_id": "horse_statue_01_4k",
+      "position": [
+        -1.7,
+        3.96,
+        -7.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Horse Statue 01",
+      "model_id": "horse_statue_01_4k",
+      "position": [
+        3.0,
+        0.7,
+        -5.5
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Wooden Table 02",
+      "model_id": "wooden_table_02_4k",
+      "position": [
+        -9.5,
+        0.1,
+        -0.2
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Side Table Tall 01",
+      "model_id": "side_table_tall_01_4k",
+      "position": [
+        -2.3,
+        0.1,
+        -1.5
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Antique Ceramic Vase 01",
+      "model_id": "antique_ceramic_vase_01_4k",
+      "position": [
+        -2.3,
+        0.67,
+        -1.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Side Table Tall 01",
+      "model_id": "side_table_tall_01_4k",
+      "position": [
+        -6.8,
+        3.16,
+        -3.8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Antique Ceramic Vase 01",
+      "model_id": "antique_ceramic_vase_01_4k",
+      "position": [
+        -6.8,
+        3.79,
+        -3.8
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

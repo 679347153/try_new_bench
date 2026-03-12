@@ -1,0 +1,7 @@
+*.tar*
+*.glb
+*.gltf/
+*.gltf
+*.obj
+*.navmesh
+objectnav/

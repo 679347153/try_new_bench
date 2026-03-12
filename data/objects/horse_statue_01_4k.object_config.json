@@ -1,0 +1,25 @@
+{
+  "render_asset": "horse_statue_01_4k.gltf/horse_statue_01_4k.gltf",
+  "join_collision_meshes": false,
+  "mass": 10.0,
+  "com": [
+    0,
+    0,
+    0
+  ],
+  "inertia": [
+    1,
+    1,
+    1
+  ],
+  "friction_coefficient": 0.5,
+  "restitution_coefficient": 0.1,
+  "semantic_id": 0,
+  "is_collidable": false,
+  "margin": 0.04,
+  "scale": [
+    1.0,
+    1.0,
+    1.0
+  ]
+}

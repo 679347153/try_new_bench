@@ -1,0 +1,278 @@
+{
+  "stage_instance": {
+    "template_name": "wcojb4TFT35.basis.glb"
+  },
+  "object_instances": [
+    {
+      "template_name": "wooden_table_02_4k",
+      "translation": [
+        -2.5,
+        -0.005,
+        -8.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "round_wooden_table_01_4k",
+      "translation": [
+        -0.5,
+        0.05,
+        -2.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "chess_set_4k",
+      "translation": [
+        -0.5,
+        0.75,
+        -2.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "chess_set_4k",
+      "translation": [
+        -2.5,
+        0.53,
+        -8.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "side_table_tall_01_4k",
+      "translation": [
+        -0.25,
+        -0.005,
+        -7.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "antique_ceramic_vase_01_4k",
+      "translation": [
+        -0.25,
+        0.57,
+        -7.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "round_wooden_table_01_4k",
+      "translation": [
+        -2.5,
+        2.59,
+        -13.8
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "chess_set_4k",
+      "translation": [
+        -2.5,
+        3.29,
+        -14.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "wooden_table_02_4k",
+      "translation": [
+        -3.5,
+        2.59,
+        -7.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "chess_set_4k",
+      "translation": [
+        -3.2,
+        3.13,
+        -7.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "side_table_tall_01_4k",
+      "translation": [
+        -1.0,
+        2.59,
+        -13.2
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "antique_ceramic_vase_01_4k",
+      "translation": [
+        -1.0,
+        3.18,
+        -13.2
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "side_table_tall_01_4k",
+      "translation": [
+        -3.0,
+        -2.2,
+        -6.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "antique_ceramic_vase_01_4k",
+      "translation": [
+        -3.0,
+        -1.6,
+        -6.0
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "round_wooden_table_01_4k",
+      "translation": [
+        -2.7,
+        -2.2,
+        -7.7
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "chess_set_4k",
+      "translation": [
+        -2.6,
+        -1.5,
+        -7.6
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "wooden_table_02_4k",
+      "translation": [
+        -0.5,
+        -2.2,
+        -11.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    },
+    {
+      "template_name": "chess_set_4k",
+      "translation": [
+        -0.6,
+        -1.6,
+        -11.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "motion_type": "STATIC"
+    }
+  ],
+  "default_lighting": "no_lights"
+}
