@@ -17,6 +17,7 @@
 """
 
 import argparse
+import json
 import math
 import os
 import sys
@@ -126,10 +127,99 @@ HELP_TEXT = [
     "I/K    俯仰视角",
     "J/L    左右旋转",
     "N/P    下/上一场景",
+    "[/]    切换布局预设",
     "R      复位到可导航点",
     "H      显示/隐藏帮助",
     "ESC/Q  退出",
 ]
+
+
+def get_scene_dir(scene_name):
+    return os.path.join(SCENES_DIR, "hm3d/val", scene_name)
+
+
+def list_layout_files(scene_name):
+    """扫描当前场景 configs 下的布局文件。"""
+    config_dir = os.path.join(get_scene_dir(scene_name), "configs")
+    if not os.path.isdir(config_dir):
+        return []
+
+    files = []
+    for name in sorted(os.listdir(config_dir)):
+        if not name.lower().endswith(".json"):
+            continue
+        files.append(os.path.join(config_dir, name))
+
+    # 让常用默认布局优先显示
+    files.sort(key=lambda p: (0 if os.path.basename(p) == "scene_objects.json" else 1, os.path.basename(p)))
+    return files
+
+
+def _resolve_template_handle(template_mgr, model_id):
+    """将短名 model_id 映射到 habitat-sim 可用的模板 handle。"""
+    candidates = template_mgr.get_template_handles(model_id)
+    if candidates:
+        return candidates[0]
+
+    if not model_id.endswith(".object_config.json"):
+        candidates = template_mgr.get_template_handles(f"{model_id}.object_config.json")
+        if candidates:
+            return candidates[0]
+
+    return None
+
+
+def apply_layout_file(sim, layout_path):
+    """清空当前刚体物体，并按布局 JSON 重新实例化。"""
+    with open(layout_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    objects = data.get("objects", [])
+    rom = sim.get_rigid_object_manager()
+    template_mgr = sim.get_object_template_manager()
+
+    # 先移除已有物体，避免叠加
+    existing_handles = list(rom.get_objects_by_handle_substring().keys())
+    for handle in existing_handles:
+        try:
+            rom.remove_object_by_handle(handle)
+        except Exception:
+            pass
+
+    loaded = 0
+    skipped = 0
+    for obj_cfg in objects:
+        model_id = obj_cfg.get("model_id") or obj_cfg.get("template_name")
+        if not model_id:
+            skipped += 1
+            continue
+
+        template_handle = _resolve_template_handle(template_mgr, model_id)
+        if template_handle is None:
+            print(f"      [跳过] 找不到模板: {model_id}")
+            skipped += 1
+            continue
+
+        obj = rom.add_object_by_template_handle(template_handle)
+        if obj is None:
+            print(f"      [跳过] 无法实例化模板: {template_handle}")
+            skipped += 1
+            continue
+
+        position = obj_cfg.get("position") or obj_cfg.get("translation")
+        if isinstance(position, list) and len(position) == 3:
+            obj.translation = np.array(position, dtype=np.float32)
+
+        # scene_objects.json 常用欧拉角(度)，这里仅按 yaw 应用，够用且稳定。
+        rotation = obj_cfg.get("rotation")
+        if isinstance(rotation, list) and len(rotation) == 3:
+            yaw_deg = float(rotation[1])
+            obj.rotation = utils.quat_from_angle_axis(math.radians(yaw_deg), np.array([0, 1, 0]))
+
+        obj.motion_type = habitat_sim.physics.MotionType.STATIC
+        loaded += 1
+
+    return loaded, skipped
 
 
 def main():
@@ -157,9 +247,11 @@ def main():
     yaw, pitch = 0.0, 0.0
     show_help = True
     scene_id_str = ""
+    scene_layout_files = []
+    layout_idx = 0
 
     def load_scene(idx):
-        nonlocal sim, pos, yaw, pitch, scene_id_str
+        nonlocal sim, pos, yaw, pitch, scene_id_str, scene_layout_files, layout_idx
         sname = AVAILABLE_SCENES[idx]
         print(f"\n>>> 加载场景 [{idx+1}/{len(AVAILABLE_SCENES)}]: {sname}")
         try:
@@ -171,12 +263,23 @@ def main():
             if sim is not None:
                 sim.close()
             sim = habitat_sim.Simulator(cfg)
-            # 打印已加载物体
-            rom = sim.get_rigid_object_manager()
-            objs = rom.get_objects_by_handle_substring()
-            print(f"    已加载物体: {len(objs)} 个")
-            for h, o in sorted(objs.items()):
-                print(f"      {h}  pos={o.translation}")
+
+            # 扫描布局并默认应用第一个布局文件
+            scene_layout_files = list_layout_files(sname)
+            layout_idx = 0
+            if scene_layout_files:
+                lpath = scene_layout_files[layout_idx]
+                print(f"    发现布局文件: {len(scene_layout_files)} 个")
+                for i, p in enumerate(scene_layout_files, 1):
+                    print(f"      [{i}] {os.path.basename(p)}")
+                loaded, skipped = apply_layout_file(sim, lpath)
+                print(f"    应用布局: {os.path.basename(lpath)}  (加载 {loaded} / 跳过 {skipped})")
+            else:
+                # 若无外部布局，沿用 scene_instance 内原始物体
+                rom = sim.get_rigid_object_manager()
+                objs = rom.get_objects_by_handle_substring()
+                print(f"    未发现布局文件，使用 scene_instance 内物体: {len(objs)} 个")
+
             pos = np.array([0.0, 0.88, 0.0])
             yaw, pitch = 0.0, 0.0
             # try:
@@ -206,6 +309,18 @@ def main():
         if key == ord('p'):
             scene_idx = (scene_idx - 1) % len(AVAILABLE_SCENES)
             load_scene(scene_idx)
+            continue
+        if key == ord(']') and sim is not None and scene_layout_files:
+            layout_idx = (layout_idx + 1) % len(scene_layout_files)
+            lpath = scene_layout_files[layout_idx]
+            loaded, skipped = apply_layout_file(sim, lpath)
+            print(f"    切换布局 -> {os.path.basename(lpath)} (加载 {loaded} / 跳过 {skipped})")
+            continue
+        if key == ord('[') and sim is not None and scene_layout_files:
+            layout_idx = (layout_idx - 1) % len(scene_layout_files)
+            lpath = scene_layout_files[layout_idx]
+            loaded, skipped = apply_layout_file(sim, lpath)
+            print(f"    切换布局 -> {os.path.basename(lpath)} (加载 {loaded} / 跳过 {skipped})")
             continue
         if key == ord('r'):
             pos = np.array([0.0, 0.88, 0.0])
@@ -273,6 +388,7 @@ def main():
             f"场景: {sname}  ({scene_idx+1}/{len(AVAILABLE_SCENES)})",
             f"位置: ({pos[0]:.2f}, {pos[1]:.2f}, {pos[2]:.2f})",
             f"偏航: {yaw:.1f}  俯仰: {pitch:.1f}",
+            f"布局: {os.path.basename(scene_layout_files[layout_idx]) if scene_layout_files else 'scene_instance默认'}",
             f"[H] 帮助",
         ]
         overlay_text(frame, hud, 10, 22, color=(80, 255, 255))
