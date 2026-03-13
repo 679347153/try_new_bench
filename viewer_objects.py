@@ -26,6 +26,7 @@ import cv2
 import numpy as np
 
 try:
+    import magnum as mn
     import habitat_sim
     import habitat_sim.utils.common as utils
 except ImportError:
@@ -214,7 +215,7 @@ def apply_layout_file(sim, layout_path):
         rotation = obj_cfg.get("rotation")
         if isinstance(rotation, list) and len(rotation) == 3:
             yaw_deg = float(rotation[1])
-            obj.rotation = utils.quat_from_angle_axis(math.radians(yaw_deg), np.array([0, 1, 0]))
+            obj.rotation = mn.Quaternion.rotation(mn.Rad(math.radians(yaw_deg)), mn.Vector3(0.0, 1.0, 0.0))
 
         obj.motion_type = habitat_sim.physics.MotionType.STATIC
         loaded += 1

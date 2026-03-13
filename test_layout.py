@@ -7,6 +7,42 @@ Interactive layout editor.
 2. 选中物体后微调位置和朝向。
 3. 将当前布局保存为 configs 下的 JSON 文件。
 
+详细使用指南:
+1. 先移动相机到合适视角。
+	- W/S: 前进/后退
+	- A/D: 左移/右移
+	- E/C: 上升/下降
+	- J/L: 左右转向
+	- I/K: 上下俯仰
+2. 选择准备添加的物体模板。
+	- Z: 上一个模板
+	- X: 下一个模板
+	- 左上角 HUD 的 Template/模板 一行会显示当前模板名。
+3. 添加物体。
+	- V: 将当前模板添加到相机前方固定距离处。
+	- 新增物体会自动成为当前选中物体，方便立刻微调。
+4. 选中已有物体。
+	- , 或 < : 选中上一个物体
+	- . 或 > : 选中下一个物体
+	- 左上角 HUD 的 Selected/选中 一行会显示当前被选中的物体。
+	- 如果当前没有任何物体，就无法选中，需要先按 V 添加一个。
+5. 调整当前选中物体。
+	- T/G: 沿相机前后方向移动
+	- F/Y: 沿相机左右方向移动
+	- U/O: 上下移动
+	- 1/2: 左转/右转
+6. 删除或保存。
+	- B: 删除当前选中物体
+	- M: 保存当前布局到 JSON 文件
+7. 切换布局。
+	- [ / ]: 切换当前场景 configs 目录下的布局文件
+	- 切换布局后会重载该布局中的物体，并自动选中第一个物体
+
+实现说明:
+- 当前版本没有鼠标点选，使用“循环切换 selected_idx”的方式选中物体。
+- 物体添加位置由当前相机位置和朝向决定，默认生成在相机前方 SPAWN_DISTANCE 米处。
+- HUD 文本是叠加在图像上的 2D 文本，不是 Habitat 场景中的 3D 文本。
+
 示例:
 	python test_layout.py 00800-TEEsavR23oF --layout scene_objects_v2.json
 	python test_layout.py 00800-TEEsavR23oF --ui-lang zh --font-path C:/Windows/Fonts/msyh.ttc
@@ -30,6 +66,7 @@ except ImportError:
 	ImageFont = None
 
 try:
+	import magnum as mn
 	import habitat_sim
 	import habitat_sim.utils.common as utils
 except ImportError:
@@ -76,7 +113,7 @@ UI_TEXT = {
 			"[/]            Switch layout file",
 			"Z/X            Switch spawn template",
 			"V              Add current template in front of camera",
-			"</>            Switch selected object",
+			",/. or </>     Switch selected object",
 			"T/G            Move selected object forward/back",
 			"F/Y            Move selected object left/right",
 			"U/O            Move selected object up/down",
@@ -117,7 +154,7 @@ UI_TEXT = {
 			"[/]            切换布局文件",
 			"Z/X            切换待添加模板",
 			"V              添加当前模板到相机前方",
-			"</>            切换选中物体",
+			",/. 或 </>     切换选中物体",
 			"T/G            选中物体前后移动",
 			"F/Y            选中物体左右移动",
 			"U/O            选中物体上下移动",
@@ -294,6 +331,10 @@ def yaw_to_quat(yaw_deg):
 	return utils.quat_from_angle_axis(math.radians(yaw_deg), np.array([0, 1, 0]))
 
 
+def yaw_to_magnum_quat(yaw_deg):
+	return mn.Quaternion.rotation(mn.Rad(math.radians(yaw_deg)), mn.Vector3(0.0, 1.0, 0.0))
+
+
 def prettify_model_name(model_id):
 	return model_id.replace("_", " ").title()
 
@@ -346,8 +387,11 @@ def create_editor_item(sim, model_id, position, yaw_deg=0.0):
 	if obj is None:
 		raise RuntimeError(f"无法实例化模板: {template_handle}")
 
+	# 这里必须给刚体对象使用 Magnum Quaternion。
+	# 你看到的 semantic warnings 只是提示当前场景没有语义标注，不会阻止添加物体。
+	# 真正导致按 V 失败的是: obj.rotation 不能接收 utils.quat_from_angle_axis 生成的 quaternion 类型。
 	obj.translation = np.array(position, dtype=np.float32)
-	obj.rotation = yaw_to_quat(yaw_deg)
+	obj.rotation = yaw_to_magnum_quat(yaw_deg)
 	obj.motion_type = habitat_sim.physics.MotionType.STATIC
 
 	return {
@@ -426,6 +470,7 @@ def get_camera_vectors(yaw_deg):
 
 
 def pick_spawn_position(camera_pos, yaw_deg):
+	# 新物体默认生成在相机前方固定距离处，并尽量贴近当前楼层高度。
 	forward, _ = get_camera_vectors(yaw_deg)
 	spawn = camera_pos.copy() + forward * SPAWN_DISTANCE
 	spawn[1] = max(0.0, float(camera_pos[1] - CAMERA_HEIGHT + 0.1))
@@ -597,6 +642,11 @@ def main():
 			template_idx = cycle_index(template_idx, len(templates), 1)
 
 		if key == ord('v'):
+			# 添加物体流程:
+			# 1. 读取当前模板 template_idx
+			# 2. 根据相机位置和朝向计算生成点
+			# 3. 实例化物体
+			# 4. 自动选中新物体，便于继续微调
 			spawn_pos = pick_spawn_position(camera_pos, yaw)
 			model_id = templates[template_idx]
 			try:
@@ -608,12 +658,15 @@ def main():
 			except Exception as exc:
 				set_status(ui["add_failed"].format(model=model_id, error=exc))
 
-		if key == ord(',') and editor_items:
+		# 当前版本不支持鼠标点选，因此通过循环 selected_idx 来切换选中物体。
+		# 同时支持 ',' '.' 以及 Shift 后的 '<' '>'，避免帮助文本和实际行为不一致。
+		if key in (ord(','), ord('<')) and editor_items:
 			selected_idx = cycle_index(selected_idx, len(editor_items), -1)
-		if key == ord('.') and editor_items:
+		if key in (ord('.'), ord('>')) and editor_items:
 			selected_idx = cycle_index(selected_idx, len(editor_items), 1)
 
 		if key == ord('b') and 0 <= selected_idx < len(editor_items):
+			# 删除后尽量保持 selected_idx 仍指向一个有效对象，避免越界。
 			item = editor_items.pop(selected_idx)
 			safe_remove_object(sim.get_rigid_object_manager(), item)
 			selected_idx = min(selected_idx, len(editor_items) - 1)
@@ -646,11 +699,11 @@ def main():
 				moved = True
 			if key == ord('1'):
 				selected_item["yaw_deg"] -= OBJECT_ROTATE_SPEED
-				obj.rotation = yaw_to_quat(selected_item["yaw_deg"])
+				obj.rotation = yaw_to_magnum_quat(selected_item["yaw_deg"])
 				moved = True
 			if key == ord('2'):
 				selected_item["yaw_deg"] += OBJECT_ROTATE_SPEED
-				obj.rotation = yaw_to_quat(selected_item["yaw_deg"])
+				obj.rotation = yaw_to_magnum_quat(selected_item["yaw_deg"])
 				moved = True
 			if moved:
 				dirty = True
