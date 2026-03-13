@@ -22,15 +22,15 @@ Interactive layout editor.
 	- V: 将当前模板添加到相机前方固定距离处。
 	- 新增物体会自动成为当前选中物体，方便立刻微调。
 4. 选中已有物体。
-	- , 或 < : 选中上一个物体
-	- . 或 > : 选中下一个物体
+	- , / < / 9 : 选中上一个物体
+	- . / > / 0 : 选中下一个物体
 	- 左上角 HUD 的 Selected/选中 一行会显示当前被选中的物体。
 	- 如果当前没有任何物体，就无法选中，需要先按 V 添加一个。
 5. 调整当前选中物体。
-	- T/G: 沿相机前后方向移动
-	- F/Y: 沿相机左右方向移动
-	- U/O: 上下移动
-	- 1/2: 左转/右转
+	- t/g: 沿相机前后方向移动（字母键建议不按 Shift）
+	- f/y: 沿相机左右方向移动（字母键建议不按 Shift）
+	- u/o: 上下移动（字母键建议不按 Shift）
+	- 1/2（或 !/@）: 左转/右转
 6. 删除或保存。
 	- B: 删除当前选中物体
 	- M: 保存当前布局到 JSON 文件
@@ -113,11 +113,11 @@ UI_TEXT = {
 			"[/]            Switch layout file",
 			"Z/X            Switch spawn template",
 			"V              Add current template in front of camera",
-			",/. or </>     Switch selected object",
+			",/. </> 9/0    Switch selected object",
 			"T/G            Move selected object forward/back",
 			"F/Y            Move selected object left/right",
 			"U/O            Move selected object up/down",
-			"1/2            Rotate selected object left/right",
+			"1/2 (!/@)      Rotate selected object left/right",
 			"B              Delete selected object",
 			"M              Save current layout",
 			"H              Toggle help",
@@ -154,11 +154,11 @@ UI_TEXT = {
 			"[/]            切换布局文件",
 			"Z/X            切换待添加模板",
 			"V              添加当前模板到相机前方",
-			",/. 或 </>     切换选中物体",
+			",/. </> 9/0    切换选中物体",
 			"T/G            选中物体前后移动",
 			"F/Y            选中物体左右移动",
 			"U/O            选中物体上下移动",
-			"1/2            选中物体左/右旋转",
+			"1/2 (!/@)      选中物体左/右旋转",
 			"B              删除选中物体",
 			"M              保存当前布局",
 			"H              显示/隐藏帮助",
@@ -236,6 +236,16 @@ def build_text_renderer(ui_lang, font_path=None, font_size=20):
 		return img
 
 	return draw_text, font is not None
+
+
+def normalize_key(raw_key):
+	"""Normalize key code from waitKeyEx to make letter hotkeys case-insensitive."""
+	if raw_key < 0:
+		return -1
+	key = raw_key & 0xFF
+	if ord('A') <= key <= ord('Z'):
+		return key + 32
+	return key
 
 
 def get_scene_dir(scene_name):
@@ -392,7 +402,8 @@ def create_editor_item(sim, model_id, position, yaw_deg=0.0):
 	# 真正导致按 V 失败的是: obj.rotation 不能接收 utils.quat_from_angle_axis 生成的 quaternion 类型。
 	obj.translation = np.array(position, dtype=np.float32)
 	obj.rotation = yaw_to_magnum_quat(yaw_deg)
-	obj.motion_type = habitat_sim.physics.MotionType.STATIC
+	# 在编辑器中使用 KINEMATIC，才能在按键微调时稳定地实时更新位姿。
+	obj.motion_type = habitat_sim.physics.MotionType.KINEMATIC
 
 	return {
 		"object": obj,
@@ -588,7 +599,10 @@ def main():
 	load_scene(scene_idx)
 
 	while True:
-		key = cv2.waitKey(30) & 0xFF
+		raw_key = cv2.waitKeyEx(30)
+		key = normalize_key(raw_key)
+		if key < 0:
+			continue
 		scene_name = AVAILABLE_SCENES[scene_idx]
 
 		if key in (27, ord('q')):
@@ -659,10 +673,10 @@ def main():
 				set_status(ui["add_failed"].format(model=model_id, error=exc))
 
 		# 当前版本不支持鼠标点选，因此通过循环 selected_idx 来切换选中物体。
-		# 同时支持 ',' '.' 以及 Shift 后的 '<' '>'，避免帮助文本和实际行为不一致。
-		if key in (ord(','), ord('<')) and editor_items:
+		# 支持标点和数字两套热键，适配不同键盘布局和输入法。
+		if key in (ord(','), ord('<'), ord('9')) and editor_items:
 			selected_idx = cycle_index(selected_idx, len(editor_items), -1)
-		if key in (ord('.'), ord('>')) and editor_items:
+		if key in (ord('.'), ord('>'), ord('0')) and editor_items:
 			selected_idx = cycle_index(selected_idx, len(editor_items), 1)
 
 		if key == ord('b') and 0 <= selected_idx < len(editor_items):
@@ -697,11 +711,11 @@ def main():
 			if key == ord('o'):
 				obj.translation = pos - np.array([0.0, OBJECT_MOVE_SPEED, 0.0], dtype=np.float32)
 				moved = True
-			if key == ord('1'):
+			if key in (ord('1'), ord('!')):
 				selected_item["yaw_deg"] -= OBJECT_ROTATE_SPEED
 				obj.rotation = yaw_to_magnum_quat(selected_item["yaw_deg"])
 				moved = True
-			if key == ord('2'):
+			if key in (ord('2'), ord('@')):
 				selected_item["yaw_deg"] += OBJECT_ROTATE_SPEED
 				obj.rotation = yaw_to_magnum_quat(selected_item["yaw_deg"])
 				moved = True
