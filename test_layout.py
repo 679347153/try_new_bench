@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-交互式布局编辑器。
+Interactive layout editor.
 
 用途:
 1. 在固定场景中可视化添加物体。
@@ -9,6 +9,7 @@
 
 示例:
 	python test_layout.py 00800-TEEsavR23oF --layout scene_objects_v2.json
+	python test_layout.py 00800-TEEsavR23oF --ui-lang zh --font-path C:/Windows/Fonts/msyh.ttc
 """
 
 import argparse
@@ -22,10 +23,17 @@ import cv2
 import numpy as np
 
 try:
+	from PIL import Image, ImageDraw, ImageFont
+except ImportError:
+	Image = None
+	ImageDraw = None
+	ImageFont = None
+
+try:
 	import habitat_sim
 	import habitat_sim.utils.common as utils
 except ImportError:
-	print("错误: 未找到 habitat_sim，请在对应环境中运行")
+	print("Error: habitat_sim not found. Run this in the correct environment.")
 	sys.exit(1)
 
 
@@ -56,27 +64,141 @@ PITCH_LIMIT = 85.0
 SPAWN_DISTANCE = 1.5
 CAMERA_HEIGHT = 0.88
 
+UI_TEXT = {
+	"en": {
+		"help": [
+			"=== Camera ===",
+			"W/S A/D E/C    Move forward/back left/right up/down",
+			"I/K J/L        Pitch / turn camera",
+			"N/P            Next / previous scene",
+			"R              Reset camera to navigable point",
+			"=== Layout ===",
+			"[/]            Switch layout file",
+			"Z/X            Switch spawn template",
+			"V              Add current template in front of camera",
+			"</>            Switch selected object",
+			"T/G            Move selected object forward/back",
+			"F/Y            Move selected object left/right",
+			"U/O            Move selected object up/down",
+			"1/2            Rotate selected object left/right",
+			"B              Delete selected object",
+			"M              Save current layout",
+			"H              Toggle help",
+			"ESC/Q          Quit",
+		],
+		"run_from_root": "Please run this script from the project root.",
+		"window_title": "Layout Editor  [H]Help  [M]Save  [ESC/Q]Quit",
+		"loading_scene": "\\n>>> Loading scene: {scene}",
+		"layout_loaded": "    Layout: {name}  (loaded {loaded} / skipped {skipped})",
+		"switch_layout": "    Switched layout -> {name} (loaded {loaded} / skipped {skipped})",
+		"add_object": "    Added object -> {model}",
+		"add_failed": "    Add failed -> {model}: {error}",
+		"delete_object": "    Deleted object -> {model}",
+		"saved": "    Saved -> {path}",
+		"render_error": "Render error: {error}",
+		"scene": "Scene: {scene}  ({idx}/{total})",
+		"layout": "Layout: {name}{dirty}",
+		"template": "Template: {name}  ({idx}/{total})",
+		"object_count": "Objects: {count}  Selected: {selected}",
+		"camera": "Camera: ({x:.2f}, {y:.2f}, {z:.2f})  yaw={yaw:.1f} pitch={pitch:.1f}",
+		"help_hint": "[H] Help  [M] Save",
+		"selected_none": "None",
+		"selected_format": "{idx}: {model} @ ({x:.2f}, {y:.2f}, {z:.2f}) yaw={yaw:.1f}",
+		"font_warning": "Warning: Chinese UI needs Pillow and a CJK font. Falling back to ASCII-safe rendering.",
+	},
+	"zh": {
+		"help": [
+			"=== 相机 ===",
+			"W/S A/D E/C    前后 左右 上下移动",
+			"I/K J/L        俯仰 / 左右旋转视角",
+			"N/P            切换场景",
+			"R              相机复位到可导航点",
+			"=== 布局 ===",
+			"[/]            切换布局文件",
+			"Z/X            切换待添加模板",
+			"V              添加当前模板到相机前方",
+			"</>            切换选中物体",
+			"T/G            选中物体前后移动",
+			"F/Y            选中物体左右移动",
+			"U/O            选中物体上下移动",
+			"1/2            选中物体左/右旋转",
+			"B              删除选中物体",
+			"M              保存当前布局",
+			"H              显示/隐藏帮助",
+			"ESC/Q          退出",
+		],
+		"run_from_root": "请在项目根目录下运行此脚本",
+		"window_title": "布局编辑器  [H]帮助  [M]保存  [ESC/Q]退出",
+		"loading_scene": "\\n>>> 加载场景: {scene}",
+		"layout_loaded": "    布局: {name}  (加载 {loaded} / 跳过 {skipped})",
+		"switch_layout": "    切换布局 -> {name} (加载 {loaded} / 跳过 {skipped})",
+		"add_object": "    添加物体 -> {model}",
+		"add_failed": "    添加失败 -> {model}: {error}",
+		"delete_object": "    删除物体 -> {model}",
+		"saved": "    已保存 -> {path}",
+		"render_error": "渲染错误: {error}",
+		"scene": "场景: {scene}  ({idx}/{total})",
+		"layout": "布局: {name}{dirty}",
+		"template": "模板: {name}  ({idx}/{total})",
+		"object_count": "物体数: {count}  选中: {selected}",
+		"camera": "相机: ({x:.2f}, {y:.2f}, {z:.2f})  yaw={yaw:.1f} pitch={pitch:.1f}",
+		"help_hint": "[H] 帮助  [M] 保存",
+		"selected_none": "无",
+		"selected_format": "{idx}: {model} @ ({x:.2f}, {y:.2f}, {z:.2f}) yaw={yaw:.1f}",
+		"font_warning": "警告: 中文界面需要 Pillow 和中文字体，当前退回到 ASCII 安全渲染。",
+	},
+}
 
-HELP_TEXT = [
-	"=== 相机 ===",
-	"W/S A/D E/C    前后 左右 上下移动",
-	"I/K J/L        俯仰 / 左右旋转视角",
-	"N/P            切换场景",
-	"R              相机复位到可导航点",
-	"=== 布局 ===",
-	"[/]            切换布局文件",
-	"Z/X            切换待添加模板",
-	"V              添加当前模板到相机前方",
-	"</>            切换选中物体",
-	"T/G            选中物体前后移动",
-	"F/Y            选中物体左右移动",
-	"U/O            选中物体上下移动",
-	"1/2            选中物体左/右旋转",
-	"B              删除选中物体",
-	"M              保存当前布局",
-	"H              显示/隐藏帮助",
-	"ESC/Q          退出",
+DEFAULT_FONT_CANDIDATES = [
+	r"C:/Windows/Fonts/msyh.ttc",
+	r"C:/Windows/Fonts/msyhbd.ttc",
+	r"C:/Windows/Fonts/simhei.ttf",
+	r"C:/Windows/Fonts/simsun.ttc",
 ]
+
+
+def contains_non_ascii(text):
+	return any(ord(ch) > 127 for ch in text)
+
+
+def find_default_font_path():
+	for path in DEFAULT_FONT_CANDIDATES:
+		if os.path.isfile(path):
+			return path
+	return None
+
+
+def build_text_renderer(ui_lang, font_path=None, font_size=20):
+	font = None
+	resolved_font_path = font_path or find_default_font_path()
+	if ui_lang == "zh" and ImageFont is not None and resolved_font_path:
+		try:
+			font = ImageFont.truetype(resolved_font_path, font_size)
+		except Exception:
+			font = None
+
+	def draw_text(img, lines, x, y, color=(255, 255, 80), scale=0.52, thickness=1):
+		line_height = 21
+		if font is not None and any(contains_non_ascii(line) for line in lines):
+			rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+			pil_img = Image.fromarray(rgb)
+			draw = ImageDraw.Draw(pil_img)
+			for line in lines:
+				draw.text((x + 1, y + 1), line, font=font, fill=(0, 0, 0))
+				draw.text((x, y), line, font=font, fill=(int(color[2]), int(color[1]), int(color[0])))
+				y += line_height
+			return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+
+		for line in lines:
+			safe_line = line if not contains_non_ascii(line) else line.encode("ascii", errors="replace").decode("ascii")
+			cv2.putText(img, safe_line, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
+						scale, (0, 0, 0), thickness + 2, cv2.LINE_AA)
+			cv2.putText(img, safe_line, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
+						scale, color, thickness, cv2.LINE_AA)
+			y += line_height
+		return img
+
+	return draw_text, font is not None
 
 
 def get_scene_dir(scene_name):
@@ -170,16 +292,6 @@ def rotation_from_euler(yaw_deg, pitch_deg):
 
 def yaw_to_quat(yaw_deg):
 	return utils.quat_from_angle_axis(math.radians(yaw_deg), np.array([0, 1, 0]))
-
-
-def overlay_text(img, lines, x, y, color=(255, 255, 80), scale=0.52, thickness=1):
-	line_height = 21
-	for line in lines:
-		cv2.putText(img, line, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
-					scale, (0, 0, 0), thickness + 2, cv2.LINE_AA)
-		cv2.putText(img, line, (x, y), cv2.FONT_HERSHEY_SIMPLEX,
-					scale, color, thickness, cv2.LINE_AA)
-		y += line_height
 
 
 def prettify_model_name(model_id):
@@ -278,7 +390,7 @@ def load_layout_into_editor(sim, layout_path, editor_items):
 			editor_items.append(item)
 			loaded += 1
 		except Exception as exc:
-			print(f"      [跳过] {model_id}: {exc}")
+			print(f"      [skip] {model_id}: {exc}")
 			skipped += 1
 
 	return loaded, skipped
@@ -344,14 +456,22 @@ def refresh_layout_files(scene_name, current_layout_path):
 
 
 def main():
+	parser = argparse.ArgumentParser(description="Interactive layout editor")
+	parser.add_argument("scene", nargs="?", default="00800-TEEsavR23oF", help="Scene name, for example 00800-TEEsavR23oF")
+	parser.add_argument("--layout", default="scene_objects.json", help="Layout filename or absolute path")
+	parser.add_argument("--ui-lang", choices=["en", "zh"], default="en", help="UI language")
+	parser.add_argument("--font-path", default="", help="Path to a CJK font, for example C:/Windows/Fonts/msyh.ttc")
+	args = parser.parse_args()
+
+	ui = UI_TEXT[args.ui_lang]
+	overlay_text, unicode_ready = build_text_renderer(args.ui_lang, args.font_path or None)
+
 	if not os.path.isdir("data/scene_datasets"):
-		print("请在项目根目录下运行此脚本")
+		print(ui["run_from_root"])
 		sys.exit(1)
 
-	parser = argparse.ArgumentParser(description="交互式布局编辑器")
-	parser.add_argument("scene", nargs="?", default="00800-TEEsavR23oF", help="场景名，例如 00800-TEEsavR23oF")
-	parser.add_argument("--layout", default="scene_objects.json", help="布局文件名或完整路径")
-	args = parser.parse_args()
+	if args.ui_lang == "zh" and not unicode_ready:
+		print(ui["font_warning"])
 
 	templates = scan_object_templates()
 
@@ -366,7 +486,7 @@ def main():
 	else:
 		current_layout_path = get_default_layout_path(AVAILABLE_SCENES[scene_idx], args.layout)
 
-	win = "布局编辑器  [H]帮助  [M]保存  [ESC/Q]退出"
+	win = ui["window_title"]
 	cv2.namedWindow(win, cv2.WINDOW_NORMAL)
 	cv2.resizeWindow(win, DISPLAY_WIDTH, DISPLAY_HEIGHT)
 
@@ -400,7 +520,7 @@ def main():
 	def load_scene(idx):
 		nonlocal sim, camera_pos, yaw, pitch, dirty, current_layout_path
 		scene_name = AVAILABLE_SCENES[idx]
-		set_status(f"\n>>> 加载场景: {scene_name}")
+		set_status(ui["loading_scene"].format(scene=scene_name))
 		scene_id = get_scene_id(scene_name)
 		cfg = make_sim_cfg(scene_id)
 
@@ -418,7 +538,7 @@ def main():
 		yaw = 0.0
 		pitch = 0.0
 		dirty = False
-		set_status(f"    布局: {os.path.basename(current_layout_path)}  (加载 {loaded} / 跳过 {skipped})")
+		set_status(ui["layout_loaded"].format(name=os.path.basename(current_layout_path), loaded=loaded, skipped=skipped))
 
 	load_scene(scene_idx)
 
@@ -445,7 +565,7 @@ def main():
 				loaded, skipped = load_layout_into_editor(sim, current_layout_path, editor_items)
 				select_after_load()
 				dirty = False
-				set_status(f"    切换布局 -> {os.path.basename(current_layout_path)} (加载 {loaded} / 跳过 {skipped})")
+				set_status(ui["switch_layout"].format(name=os.path.basename(current_layout_path), loaded=loaded, skipped=skipped))
 			continue
 		if key == ord('['):
 			update_layout_catalog(scene_name)
@@ -455,7 +575,7 @@ def main():
 				loaded, skipped = load_layout_into_editor(sim, current_layout_path, editor_items)
 				select_after_load()
 				dirty = False
-				set_status(f"    切换布局 -> {os.path.basename(current_layout_path)} (加载 {loaded} / 跳过 {skipped})")
+				set_status(ui["switch_layout"].format(name=os.path.basename(current_layout_path), loaded=loaded, skipped=skipped))
 			continue
 
 		if key == ord('h'):
@@ -484,9 +604,9 @@ def main():
 				editor_items.append(item)
 				selected_idx = len(editor_items) - 1
 				dirty = True
-				set_status(f"    添加物体 -> {model_id}")
+				set_status(ui["add_object"].format(model=model_id))
 			except Exception as exc:
-				set_status(f"    添加失败 -> {model_id}: {exc}")
+				set_status(ui["add_failed"].format(model=model_id, error=exc))
 
 		if key == ord(',') and editor_items:
 			selected_idx = cycle_index(selected_idx, len(editor_items), -1)
@@ -498,7 +618,7 @@ def main():
 			safe_remove_object(sim.get_rigid_object_manager(), item)
 			selected_idx = min(selected_idx, len(editor_items) - 1)
 			dirty = True
-			set_status(f"    删除物体 -> {item['model_id']}")
+			set_status(ui["delete_object"].format(model=item["model_id"]))
 
 		forward, right = get_camera_vectors(yaw)
 		selected_item = editor_items[selected_idx] if 0 <= selected_idx < len(editor_items) else None
@@ -539,7 +659,7 @@ def main():
 			save_layout(scene_name, current_layout_path, editor_items)
 			update_layout_catalog(scene_name)
 			dirty = False
-			set_status(f"    已保存 -> {current_layout_path}")
+			set_status(ui["saved"].format(path=current_layout_path))
 
 		if key == ord('j'):
 			yaw += ROTATE_SPEED
@@ -574,30 +694,38 @@ def main():
 			frame = cv2.cvtColor(rgb.astype(np.uint8), cv2.COLOR_RGB2BGR)
 		except Exception as exc:
 			frame = np.zeros((DISPLAY_HEIGHT, DISPLAY_WIDTH, 3), dtype=np.uint8)
-			overlay_text(frame, [f"渲染错误: {exc}"], 20, 60, color=(80, 80, 255))
+			frame = overlay_text(frame, [ui["render_error"].format(error=exc)], 20, 60, color=(80, 80, 255))
 
-		selected_label = "无"
+		selected_label = ui["selected_none"]
 		if 0 <= selected_idx < len(editor_items):
 			item = editor_items[selected_idx]
 			pos = item["object"].translation
-			selected_label = f"{selected_idx}: {item['model_id']} @ ({pos[0]:.2f}, {pos[1]:.2f}, {pos[2]:.2f}) yaw={item['yaw_deg']:.1f}"
+			selected_label = ui["selected_format"].format(
+				idx=selected_idx,
+				model=item["model_id"],
+				x=pos[0],
+				y=pos[1],
+				z=pos[2],
+				yaw=item["yaw_deg"],
+			)
 
 		hud = [
-			f"场景: {scene_name}  ({scene_idx + 1}/{len(AVAILABLE_SCENES)})",
-			f"布局: {os.path.basename(current_layout_path)}{' *' if dirty else ''}",
-			f"模板: {templates[template_idx]}  ({template_idx + 1}/{len(templates)})",
-			f"物体数: {len(editor_items)}  选中: {selected_label}",
-			f"相机: ({camera_pos[0]:.2f}, {camera_pos[1]:.2f}, {camera_pos[2]:.2f})  yaw={yaw:.1f} pitch={pitch:.1f}",
-			"[H] 帮助  [M] 保存",
+			ui["scene"].format(scene=scene_name, idx=scene_idx + 1, total=len(AVAILABLE_SCENES)),
+			ui["layout"].format(name=os.path.basename(current_layout_path), dirty=" *" if dirty else ""),
+			ui["template"].format(name=templates[template_idx], idx=template_idx + 1, total=len(templates)),
+			ui["object_count"].format(count=len(editor_items), selected=selected_label),
+			ui["camera"].format(x=camera_pos[0], y=camera_pos[1], z=camera_pos[2], yaw=yaw, pitch=pitch),
+			ui["help_hint"],
 		]
-		overlay_text(frame, hud, 10, 22, color=(80, 255, 255))
+		frame = overlay_text(frame, hud, 10, 22, color=(80, 255, 255))
 
 		if status_text:
-			overlay_text(frame, [status_text], 10, DISPLAY_HEIGHT - 16, color=(255, 220, 120))
+			frame = overlay_text(frame, [status_text], 10, DISPLAY_HEIGHT - 16, color=(255, 220, 120))
 
 		if show_help:
-			y0 = DISPLAY_HEIGHT - len(HELP_TEXT) * 21 - 40
-			overlay_text(frame, HELP_TEXT, 10, y0, color=(80, 255, 80))
+			help_lines = ui["help"]
+			y0 = DISPLAY_HEIGHT - len(help_lines) * 21 - 40
+			frame = overlay_text(frame, help_lines, 10, y0, color=(80, 255, 80))
 
 		cv2.imshow(win, frame)
 
