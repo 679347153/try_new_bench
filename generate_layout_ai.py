@@ -220,15 +220,15 @@ def extract_habitat_semantics_info(scene_name):
         semantic_scene = sim.semantic_scene
         
         if not semantic_scene:
-            sim.close()
             print(f"[ERROR] Failed to load semantic scene for {scene_name}. Semantic scene is None/Empty.")
             # 尝试通过元数据获取具体的错误信息
-            active_scene_graph = sim.get_active_scene_graph()
-            root_node = active_scene_graph.get_root_node()
-            print(f"[DEBUG] Root node valid: {root_node.is_valid()}")
-            metadata = sim.metadata_mediator
+            # active_scene_graph = sim.get_active_scene_graph()
+            # root_node = active_scene_graph.get_root_node()
+            # print(f"[DEBUG] Root node valid: {root_node.is_valid()}")
+            # metadata = sim.metadata_mediator
             # scene_attributes = metadata.get_scene_attributes(scene_id) # API depends on version
-            print(f"[DEBUG] Active Semantic Scene ID: {sim.semantic_scene.id if sim.semantic_scene else 'None'}")
+            # print(f"[DEBUG] Active Semantic Scene ID: {sim.semantic_scene.id if sim.semantic_scene else 'None'}")
+            sim.close()
             return entries, False
 
         print(f"[DEBUG] Semantic Scene Loaded Successfully. Objects count: {len(semantic_scene.objects)}")
