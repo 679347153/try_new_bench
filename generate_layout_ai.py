@@ -78,13 +78,22 @@ semantic_summary.json 包含：
     - scene_count: 总场景数
     - scenes[]: 每个场景的结构化数据
         - scene: 场景名
+        - semantic_source: 数据来源 ("habitat-sim")
         - summary: {object_count, category_count, region_count, top_categories, ...}
-        - entries[]: 每条 semantic 记录
-            - object_id: 物体 ID
-            - region_id: 区域 ID
-            - category: 物体类别 (如 "chair", "sofa", ...)
-            - line_no: 在原 .txt 中的行号
-            - raw: 原始文本行
+        - entries[]: 每条 semantic 记录 (对应场景中一个具体的 3D 物体)
+            - object_id: 物体唯一 ID (int)
+            - category: 物体类别名称 (str, 如 "chair", "sofa")
+            - region_id: 所属区域 ID (str/int, 如 "kitchen_0")
+            - region_category: 所属区域类别 (str, 如 "kitchen", "bedroom")
+            - level_id: 所属楼层 ID (str/int)
+            - aabb_center: [x, y, z] 物体包围盒中心坐标 (List[float]) -> **这就是位置信息**
+            - aabb_size: [x, y, z] 物体包围盒尺寸 (List[float])
+            - volume: 物体体积 (float)
+            - raw: 原始标识字符串 (仅供参考)
+
+问题回答：是的，修改后的 JSON 包含了每个物体的位置信息。
+具体体现为 `entries` 列表下的 `aabb_center` 字段，它提供了物体在 3D 空间中的中心坐标 (x, y, z)。
+此外还提供了 `aabb_size` (尺寸) 和 `volume` (体积) 等几何信息。
 """
 
 import argparse
@@ -97,6 +106,15 @@ from datetime import datetime
 
 import cv2
 import numpy as np
+
+# Habitat-Sim imports
+try:
+    import magnum as mn
+    import habitat_sim
+except ImportError:
+    print("Error: habitat_sim not found. Please install habitat-sim to use this script.")
+    sys.exit(1)
+
 
 # 可选的 Qwen3-VL 依赖
 try:
@@ -115,6 +133,7 @@ except ImportError:
     print("[WARN] Pillow not installed. Image loading may fail.")
 
 SCENES_ROOT = "data/scene_datasets/hm3d/val"
+SCENE_DATASET_CONFIG = "data/scene_datasets/hm3d/hm3d_annotated_basis.scene_dataset_config.json"
 DEFAULT_SCENES = [
     "00800-TEEsavR23oF",
     "00802-wcojb4TFT35",
@@ -148,71 +167,78 @@ def parse_scene_id(scene_name):
     return parts[1] if len(parts) > 1 else scene_name
 
 
-def get_scene_dir(scene_name):
-    return os.path.join(SCENES_ROOT, scene_name)
-
-
-def get_semantic_paths(scene_name):
+def make_sim_cfg(scene_name):
+    # 使用 scene_id 确保能找到正确的场景
     scene_id = parse_scene_id(scene_name)
-    scene_dir = get_scene_dir(scene_name)
-    txt_path = os.path.join(scene_dir, f"{scene_id}.semantic.txt")
-    glb_path = os.path.join(scene_dir, f"{scene_id}.semantic.glb")
-    return txt_path, glb_path
+    sim_cfg = habitat_sim.SimulatorConfiguration()
+    sim_cfg.scene_dataset_config_file = SCENE_DATASET_CONFIG
+    sim_cfg.scene_id = scene_id
+    sim_cfg.enable_physics = False
+    sim_cfg.gpu_device_id = 0
+    
+    agent_cfg = habitat_sim.agent.AgentConfiguration()
+    return habitat_sim.Configuration(sim_cfg, [agent_cfg])
 
 
-def split_semantic_line(line):
-    """Robust parser for hm3d semantic txt lines.
-
-    Typical patterns differ by dataset release; we parse conservatively.
-    Return dict with optional keys: object_id, region_id, category, raw_tokens.
+def extract_habitat_semantics_info(scene_name):
     """
-    text = line.strip()
-    if not text:
-        return None
-
-    tokens = re.split(r"\s+", text)
-    ints = []
-    for token in tokens:
-        if re.fullmatch(r"-?\d+", token):
-            ints.append(int(token))
-
-    category = None
-    # Prefer category after ':' if present, otherwise join non-int tail.
-    if ":" in text:
-        category = text.split(":", 1)[1].strip()
-    else:
-        tail = [t for t in tokens if not re.fullmatch(r"-?\d+", t)]
-        if tail:
-            category = " ".join(tail).strip()
-
-    category = category or "unknown"
-    category = category.strip('"')
-
-    object_id = ints[0] if len(ints) >= 1 else None
-    region_id = ints[1] if len(ints) >= 2 else None
-
-    return {
-        "object_id": object_id,
-        "region_id": region_id,
-        "category": category,
-        "raw_tokens": tokens,
-        "raw": text,
-    }
-
-
-def read_semantic_txt(txt_path):
+    Configure Habitat-Sim, load scene, and extract semantic scene graph.
+    Returns structured data similar to old text parsing but richer.
+    """
     entries = []
-    if not os.path.isfile(txt_path):
-        return entries
+    
+    try:
+        cfg = make_sim_cfg(scene_name)
+        sim = habitat_sim.Simulator(cfg)
+        semantic_scene = sim.semantic_scene
+        
+        if not semantic_scene:
+            sim.close()
+            return entries, False
 
-    with open(txt_path, "r", encoding="utf-8", errors="ignore") as f:
-        for i, line in enumerate(f, start=1):
-            parsed = split_semantic_line(line)
-            if parsed is None:
+        # Iterate directly over habitat semantic objects
+        for obj in semantic_scene.objects:
+            if obj is None:
                 continue
-            parsed["line_no"] = i
-            entries.append(parsed)
-    return entries
+
+            # Extract basic info
+            obj_id = obj.id
+            category_obj = obj.category
+            category_name = category_obj.name() if category_obj else "unknown"
+            
+            # Additional info available in habitat
+            region_obj = obj.region
+            region_id = region_obj.id if region_obj else None
+            # Some helper to get region category name if available
+            region_category = region_obj.category.name() if (region_obj and region_obj.category) else "unknown"
+            level_obj = obj.region.level if region_obj else None
+            level_id = level_obj.id if level_obj else None
+
+            # Geometric properties (center, size)
+            aabb = obj.aabb
+            center = aabb.center()
+            sizes = aabb.size()
+            
+            # Store formatted entry
+            entry = {
+                "object_id": obj_id,  # Start from semantic ID
+                "category": category_name,
+                "region_id": region_id,
+                "region_category": region_category,
+                "level_id": level_id,
+                "aabb_center": [float(center.x), float(center.y), float(center.z)],
+                "aabb_size": [float(sizes.x), float(sizes.y), float(sizes.z)],
+                "volume": float(sizes.x * sizes.y * sizes.z),
+                "raw": f"{obj_id} {region_id} {category_name}",  # Backward compact compatibility for display
+            }
+            entries.append(entry)
+
+        sim.close()
+        return entries, True
+
+    except Exception as e:
+        print(f"[ERROR] Failed to extract semantics for {scene_name}: {e}")
+        return entries, False
 
 
 def group_category_prefix(category):
@@ -248,18 +274,20 @@ def summarize_entries(entries):
 
 
 def build_scene_semantic(scene_name):
-    txt_path, glb_path = get_semantic_paths(scene_name)
-    entries = read_semantic_txt(txt_path)
+    # Retrieve data directly from Habitat-Sim
+    entries, success = extract_habitat_semantics_info(scene_name)
     summary = summarize_entries(entries)
+
+    scene_dir = os.path.join(SCENES_ROOT, scene_name)
+    # Just for info/logging
+    glb_path = os.path.join(scene_dir, f"{parse_scene_id(scene_name)}.semantic.glb")
 
     return {
         "scene": scene_name,
-        "scene_dir": get_scene_dir(scene_name),
-        "semantic_txt": txt_path,
-        "semantic_glb": glb_path,
-        "semantic_txt_exists": os.path.isfile(txt_path),
-        "semantic_glb_exists": os.path.isfile(glb_path),
-        "semantic_glb_size_bytes": os.path.getsize(glb_path) if os.path.isfile(glb_path) else 0,
+        "scene_dir": scene_dir,
+        "semantic_source": "habitat-sim",
+        "semantic_extracted": success,
+        "semantic_glb_approx_path": glb_path,
         "summary": summary,
         "entries": entries,
     }
@@ -268,11 +296,9 @@ def build_scene_semantic(scene_name):
 def print_scene_summary(scene_data):
     s = scene_data["summary"]
     print(f"\n=== Scene: {scene_data['scene']} ===")
-    print(f"semantic.txt: {scene_data['semantic_txt']} ({'OK' if scene_data['semantic_txt_exists'] else 'MISSING'})")
-    print(f"semantic.glb: {scene_data['semantic_glb']} ({'OK' if scene_data['semantic_glb_exists'] else 'MISSING'})")
-    if scene_data["semantic_glb_exists"]:
-        print(f"semantic.glb size: {scene_data['semantic_glb_size_bytes']} bytes")
-
+    print(f"Source: {scene_data['semantic_source']}")
+    print(f"Extraction Status: {'SUCCESS' if scene_data['semantic_extracted'] else 'FAILED'}")
+    
     print(
         "objects={obj} categories={cat} regions={reg}".format(
             obj=s["object_count"], cat=s["category_count"], reg=s["region_count"]
@@ -282,8 +308,11 @@ def print_scene_summary(scene_data):
     print("Top categories:")
     if not s["top_categories"]:
         print("  (none)")
-    for name, cnt in s["top_categories"][:10]:
-        print(f"  - {name}: {cnt}")
+    try:
+        for name, cnt in s["top_categories"][:10]:
+            print(f"  - {name}: {cnt}")
+    except Exception:
+        pass
 
 
 def export_json(scene_data_list, output_path):
@@ -339,9 +368,12 @@ def visualize(scene_data_list, keyword=""):
             frame[y, :, 2] = int(24 + 42 * ratio)
 
         s = scene_data["summary"]
+        source = scene_data.get("semantic_source", "unknown")
+        status = "SUCCESS" if scene_data.get("semantic_extracted", False) else "FAILED"
+        
         title = [
             f"Scene: {scene_data['scene']}  ({scene_idx + 1}/{len(scene_data_list)})",
-            f"txt: {'OK' if scene_data['semantic_txt_exists'] else 'MISSING'}   glb: {'OK' if scene_data['semantic_glb_exists'] else 'MISSING'} ({scene_data['semantic_glb_size_bytes']} bytes)",
+            f"Source: {source}   Status: {status}",
             f"objects={s['object_count']} categories={s['category_count']} regions={s['region_count']}   filter='{keyword or 'none'}'",
             f"Entries: {len(entries)}  Page: {page + 1}/{page_count}",
         ]
