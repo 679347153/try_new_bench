@@ -96,21 +96,30 @@ def main():
         print(f"Found dataset config: {dataset_config_path}")
         config_dir = os.path.dirname(dataset_config_path)
         # Search for a scene relative to this config
-        # We look for a .basis.glb or .scene_instance.json
-        # The handle expected by Habitat is relative to the config file directory
         
         # We need a robust walk
         for root, dirs, files in os.walk(config_dir):
-            # Sort files to ensure deterministic behavior
+            # Sort to ensure deterministic behavior
+            dirs.sort()
             files.sort()
             
-            # First check for scene instance
-            instance_file = next((f for f in files if f.endswith(".scene_instance.json")), None)
+            # Prioritize basis.glb over scene_instance.json for better semantic loading support
+            # (Scene instances sometimes don't link semantics correctly in all dataset versions)
             basis_file = next((f for f in files if f.endswith(".basis.glb")), None)
+            instance_file = next((f for f in files if f.endswith(".scene_instance.json")), None)
             
-            target_file = instance_file if instance_file else basis_file
+            # Prefer basis file
+            target_file = basis_file if basis_file else instance_file
             
             if target_file:
+                # Check if corresponding semantic file exists (strict check)
+                scene_name = target_file.split('.')[0]
+                semantic_file = f"{scene_name}.semantic.glb"
+                if semantic_file in files:
+                    print(f"Verified semantic file exists: {semantic_file}")
+                else:
+                    print(f"Warning: Semantic file {semantic_file} not found for {target_file}")
+                
                 abs_path = os.path.join(root, target_file)
                 # Compute relative path
                 rel_path = os.path.relpath(abs_path, config_dir)
