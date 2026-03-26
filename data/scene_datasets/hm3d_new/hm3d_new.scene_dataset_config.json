@@ -44,6 +44,32 @@
       "has_semantic_textures": false
     }
   },
+  "semantic_scene_descriptors": {
+    "paths": {
+      ".glb": [
+        "hm3d/val/00800-TEEsavR23oF/*.semantic.glb",
+        "hm3d/val/00802-wcojb4TFT35/*.semantic.glb",
+        "hm3d/val/00813-svBbv1Pavdk/*.semantic.glb",
+        "hm3d/val/00814-p53SfW6mjZe/*.semantic.glb",
+        "hm3d/val/00820-mL8ThkuaVTM/*.semantic.glb",
+        "hm3d/val/00824-Dd4bFSTQ8gi/*.semantic.glb",
+        "hm3d/val/00829-QaLdnwvtxbs/*.semantic.glb",
+        "hm3d/val/00832-qyAac8rV8Zk/*.semantic.glb",
+        "hm3d/val/00835-q3zU7Yy5E5s/*.semantic.glb",
+        "hm3d/val/00839-zt1RVoi7PcG/*.semantic.glb",
+        "hm3d/val/00843-DYehNKdT76V/*.semantic.glb",
+        "hm3d/val/00848-ziup5kvtCCR/*.semantic.glb",
+        "hm3d/val/00853-5cdEh9F2hJL/*.semantic.glb",
+        "hm3d/val/00873-bxsVRursffK/*.semantic.glb",
+        "hm3d/val/00876-mv2HUxq3B53/*.semantic.glb",
+        "hm3d/val/00877-4ok3usBNeis/*.semantic.glb",
+        "hm3d/val/00878-XB4GS9ShBRE/*.semantic.glb",
+        "hm3d/val/00880-Nfvxx8J5NCo/*.semantic.glb",
+        "hm3d/val/00890-6s7QHgap2fW/*.semantic.glb",
+        "hm3d/val/00891-cvZr5TUy5C5/*.semantic.glb"
+      ]
+    }
+  },
   "objects": {
     "paths": {
       ".object_config.json": [

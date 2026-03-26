@@ -133,7 +133,7 @@ except ImportError:
     print("[WARN] Pillow not installed. Image loading may fail.")
 
 SCENES_ROOT = "data/scene_datasets/hm3d_new/hm3d/val"
-SCENE_DATASET_CONFIG = "./data/scene_datasets/hm3d/hm3d_annotated_basis.scene_dataset_config.json"
+SCENE_DATASET_CONFIG = "data/scene_datasets/hm3d_new/hm3d_new.scene_dataset_config.json"
 DEFAULT_SCENES = [
     "00800-TEEsavR23oF",
     "00802-wcojb4TFT35",
