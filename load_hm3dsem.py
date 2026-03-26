@@ -21,6 +21,8 @@ import numpy as np
 def make_cfg(settings):
     sim_cfg = habitat_sim.SimulatorConfiguration()
     sim_cfg.gpu_device_id = 0
+    if "scene_dataset_config_file" in settings and settings["scene_dataset_config_file"]:
+        sim_cfg.scene_dataset_config_file = settings["scene_dataset_config_file"]
     sim_cfg.scene_id = settings["scene"]
     sim_cfg.enable_physics = True
 
@@ -76,23 +78,67 @@ def main():
     # Start looking from the current directory's 'data' folder
     base_data_path = "data"
     scene_path = None
-    
-    # Try finding the specific file we know exists
-    potential_path = os.path.join("data", "scene_datasets", "hm3d_new", "hm3d", "val", "00800-TEEsavR23oF", "TEEsavR23oF.basis.glb")
-    if os.path.exists(potential_path):
-        scene_path = potential_path
-    
-    if not scene_path:
-        # Fallback to recursively searching for any .basis.glb
-        for root, dirs, files in os.walk(base_data_path):
-            for file in files:
-                if file.endswith(".basis.glb"):
-                    scene_path = os.path.join(root, file)
-                    break
-            if scene_path:
-                break
+    dataset_config_path = None
 
-    if not scene_path or not os.path.exists(scene_path):
+    # Search for Dataset Config
+    potential_configs = [
+        # Try hm3d_new first
+        os.path.join("data", "scene_datasets", "hm3d_new", "hm3d_new.scene_dataset_config.json"),
+        os.path.join("data", "hm3d_annotated_basis.scene_dataset_config.json")
+    ]
+
+    for cfg in potential_configs:
+        if os.path.exists(cfg):
+            dataset_config_path = os.path.abspath(cfg)
+            break
+            
+    if dataset_config_path:
+        print(f"Found dataset config: {dataset_config_path}")
+        config_dir = os.path.dirname(dataset_config_path)
+        # Search for a scene relative to this config
+        # We look for a .basis.glb or .scene_instance.json
+        # The handle expected by Habitat is relative to the config file directory
+        
+        # We need a robust walk
+        for root, dirs, files in os.walk(config_dir):
+            # Sort files to ensure deterministic behavior
+            files.sort()
+            
+            # First check for scene instance
+            instance_file = next((f for f in files if f.endswith(".scene_instance.json")), None)
+            basis_file = next((f for f in files if f.endswith(".basis.glb")), None)
+            
+            target_file = instance_file if instance_file else basis_file
+            
+            if target_file:
+                abs_path = os.path.join(root, target_file)
+                # Compute relative path
+                rel_path = os.path.relpath(abs_path, config_dir)
+                scene_path = rel_path.replace("\\", "/")
+                print(f"Selected scene handle: {scene_path}")
+                break
+        
+        if not scene_path:
+             print("Warning: Dataset config found but no scene file found relative to it.")
+    
+    # Fallback to absolute path search if no config-based scene found
+    if not scene_path:
+        # Try finding the specific file we know exists
+        potential_path = os.path.join("data", "scene_datasets", "hm3d_new", "hm3d", "val", "00800-TEEsavR23oF", "TEEsavR23oF.basis.glb")
+        if os.path.exists(potential_path):
+            scene_path = potential_path
+        
+        if not scene_path:
+            # Fallback to recursively searching for any .basis.glb
+            for root, dirs, files in os.walk(base_data_path):
+                for file in files:
+                    if file.endswith(".basis.glb"):
+                        scene_path = os.path.join(root, file)
+                        break
+                if scene_path:
+                    break
+
+    if not scene_path:
         print(f"Error: Could not find any HM3D scene file (.basis.glb) in 'data/' directory.")
         print(f"Current working directory: {os.getcwd()}")
         return
@@ -101,15 +147,18 @@ def main():
         "width": 640,
         "height": 480,
         "scene": scene_path,
+        "scene_dataset_config_file": dataset_config_path
     }
 
-    print(f"Loading scene from: {scene_path}")
+    print(f"Loading scene: {scene_path}")
     
     try:
         cfg = make_cfg(settings)
         sim = habitat_sim.Simulator(cfg)
     except Exception as e:
         print(f"Failed to create simulator: {e}")
+        import traceback
+        traceback.print_exc()
         return
 
     print("Simulator loaded successfully!")
