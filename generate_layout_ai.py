@@ -133,7 +133,7 @@ except ImportError:
     print("[WARN] Pillow not installed. Image loading may fail.")
 
 SCENES_ROOT = "data/scene_datasets/hm3d/val"
-SCENE_DATASET_CONFIG = "data/scene_datasets/hm3d/hm3d_annotated_basis.scene_dataset_config.json"
+SCENE_DATASET_CONFIG = "./data/scene_datasets/hm3d/hm3d_annotated_basis.scene_dataset_config.json"
 DEFAULT_SCENES = [
     "00800-TEEsavR23oF",
     "00802-wcojb4TFT35",
@@ -163,27 +163,38 @@ def normalize_key(raw_key):
 
 
 def parse_scene_id(scene_name):
+    # e.g. "00800-TEEsavR23oF" -> "TEEsavR23oF"
     parts = scene_name.split("-", 1)
     return parts[1] if len(parts) > 1 else scene_name
 
 
 def make_sim_cfg(scene_name):
-    # Construct the full path to the .basis.glb file
-    # This is often more reliable than just the hash ID for finding the semantic asset implicitly
-    scene_id = parse_scene_id(scene_name)
-    basis_glb_path = os.path.join(SCENES_ROOT, scene_name, f"{scene_id}.basis.glb")
+    # 按照 test_layout.py 中的路径逻辑
+    # SCENES_DIR = "data/scene_datasets/hm3d_new" (注意：你的 test_layout.py 与这里不同，我将尝试跟随 test_layout.py 的配置 logic)
+    # 不过看你的 log，路径是 data/scene_datasets/hm3d/val
     
-    # If file exists, use full path as scene_id. Fallback to hash if not found.
-    final_scene_id = basis_glb_path if os.path.isfile(basis_glb_path) else scene_id
+    scene_id_short = parse_scene_id(scene_name)  # TEEsavR23oF
     
-    print(f"[Habitat] Loading scene_id: {final_scene_id}")
-
     sim_cfg = habitat_sim.SimulatorConfiguration()
     sim_cfg.scene_dataset_config_file = SCENE_DATASET_CONFIG
-    sim_cfg.scene_id = final_scene_id
+    
+    # 关键点：habitat-sim 加载 semantic 通常依赖 .scene_instance.json 或直接指定 .basis.glb
+    # 如果只指定 glb，元数据加载器可能找不到关联的 .semantic.glb
+    # 如果指定 scene handle (例如 "TEEsavR23oF")，则依赖 dataset config
+    
+    # 根据 test_layout.py:
+    #   sim_cfg.scene_id = scene_id  (其中 scene_id 是短名 "TEEsavR23oF")
+    #   SCENE_DATASET_CONFIG 指向 hm3d_annotated_basis.scene_dataset_config.json
+    
+    # 所以如果你正确配置了 SCENE_DATASET_CONFIG，你应该只需要传短 ID
+    sim_cfg.scene_id = scene_id_short
+    
     sim_cfg.enable_physics = False
     sim_cfg.gpu_device_id = 0
-    sim_cfg.load_semantic_mesh = True  # Explicitly request semantic mesh loading
+    sim_cfg.load_semantic_mesh = True
+    
+    # 强制覆盖场景路径搜索（如果不生效）
+    # sim_cfg.override_scene_light_defaults = True
     
     agent_cfg = habitat_sim.agent.AgentConfiguration()
     return habitat_sim.Configuration(sim_cfg, [agent_cfg])
