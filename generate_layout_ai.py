@@ -196,8 +196,14 @@ def make_sim_cfg(scene_name):
     
     # Passing the short ID relies on the dataset config to map the ID to the file path.
     # FIX: Use the full path matching the handles registered by the dataset config.
-    print(f"[DEBUG] Setting sim_cfg.scene_id = {expected_scene_path}")
-    sim_cfg.scene_id = expected_scene_path
+    # PREFER .scene_instance.json if available, as it likely binds the stage + semantics correctly.
+    scene_instance_path = os.path.join(SCENES_ROOT, scene_name, f"{scene_id_short}.scene_instance.json")
+    if os.path.exists(scene_instance_path):
+        print(f"[DEBUG] Found SceneInstance, setting sim_cfg.scene_id = {scene_instance_path}")
+        sim_cfg.scene_id = scene_instance_path
+    else:
+        print(f"[DEBUG] Setting sim_cfg.scene_id = {expected_scene_path}")
+        sim_cfg.scene_id = expected_scene_path
     
     sim_cfg.enable_physics = False
     sim_cfg.gpu_device_id = 0
