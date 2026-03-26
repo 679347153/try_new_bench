@@ -221,13 +221,30 @@ def extract_habitat_semantics_info(scene_name):
         
         if not semantic_scene:
             print(f"[ERROR] Failed to load semantic scene for {scene_name}. Semantic scene is None/Empty.")
-            # 尝试通过元数据获取具体的错误信息
-            # active_scene_graph = sim.get_active_scene_graph()
-            # root_node = active_scene_graph.get_root_node()
-            # print(f"[DEBUG] Root node valid: {root_node.is_valid()}")
-            # metadata = sim.metadata_mediator
-            # scene_attributes = metadata.get_scene_attributes(scene_id) # API depends on version
-            # print(f"[DEBUG] Active Semantic Scene ID: {sim.semantic_scene.id if sim.semantic_scene else 'None'}")
+            
+            # --- DEBUGGING START ---
+            try:
+                # Try to inspect available stage handles to see what's wrong with the scene_id
+                stm = sim.get_stage_template_manager()
+                handles = stm.get_template_handles()
+                current_id = sim.config.sim_cfg.scene_id
+                print(f"[DEBUG] Current scene_id requested: '{current_id}'")
+                if current_id in handles:
+                    print(f"[DEBUG] scene_id IS in handles.")
+                else:
+                    print(f"[DEBUG] scene_id is NOT in handles ({len(handles)} available).")
+                    # suggest match
+                    matches = [h for h in handles if current_id in h]
+                    if matches:
+                        print(f"[DEBUG] Did you mean one of these? {matches[:5]}")
+                    else:
+                        print(f"[DEBUG] No partial matches found. Dumping first 10 handles:")
+                        for h in handles[:10]:
+                            print(f"[DEBUG] - {h}")
+            except Exception as debug_err:
+                print(f"[DEBUG] Failed to inspect handles: {debug_err}")
+            # --- DEBUGGING END ---
+
             sim.close()
             return entries, False
 
