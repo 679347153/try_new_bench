@@ -168,13 +168,22 @@ def parse_scene_id(scene_name):
 
 
 def make_sim_cfg(scene_name):
-    # 使用 scene_id 确保能找到正确的场景
+    # Construct the full path to the .basis.glb file
+    # This is often more reliable than just the hash ID for finding the semantic asset implicitly
     scene_id = parse_scene_id(scene_name)
+    basis_glb_path = os.path.join(SCENES_ROOT, scene_name, f"{scene_id}.basis.glb")
+    
+    # If file exists, use full path as scene_id. Fallback to hash if not found.
+    final_scene_id = basis_glb_path if os.path.isfile(basis_glb_path) else scene_id
+    
+    print(f"[Habitat] Loading scene_id: {final_scene_id}")
+
     sim_cfg = habitat_sim.SimulatorConfiguration()
     sim_cfg.scene_dataset_config_file = SCENE_DATASET_CONFIG
-    sim_cfg.scene_id = scene_id
+    sim_cfg.scene_id = final_scene_id
     sim_cfg.enable_physics = False
     sim_cfg.gpu_device_id = 0
+    sim_cfg.load_semantic_mesh = True  # Explicitly request semantic mesh loading
     
     agent_cfg = habitat_sim.agent.AgentConfiguration()
     return habitat_sim.Configuration(sim_cfg, [agent_cfg])
