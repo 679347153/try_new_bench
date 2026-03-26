@@ -133,7 +133,7 @@ except ImportError:
     print("[WARN] Pillow not installed. Image loading may fail.")
 
 SCENES_ROOT = "data/scene_datasets/hm3d_new/hm3d/val"
-SCENE_DATASET_CONFIG = "./data/scene_datasets/hm3d_new/hm3d_annotated_basis.scene_dataset_config.json"
+SCENE_DATASET_CONFIG = "./data/scene_datasets/hm3d/hm3d_annotated_basis.scene_dataset_config.json"
 DEFAULT_SCENES = [
     "00800-TEEsavR23oF",
     "00802-wcojb4TFT35",
@@ -169,32 +169,39 @@ def parse_scene_id(scene_name):
 
 
 def make_sim_cfg(scene_name):
-    # 按照 test_layout.py 中的路径逻辑
-    # SCENES_DIR = "data/scene_datasets/hm3d_new" (注意：你的 test_layout.py 与这里不同，我将尝试跟随 test_layout.py 的配置 logic)
-    # 不过看你的 log，路径是 data/scene_datasets/hm3d/val
+    print(f"\n[DEBUG] === Configuring Simulator for scene: {scene_name} ===")
     
-    scene_id_short = parse_scene_id(scene_name)  # TEEsavR23oF
+    scene_id_short = parse_scene_id(scene_name)
+    print(f"[DEBUG] Parsed short ID: {scene_id_short}")
     
+    abs_config_path = os.path.abspath(SCENE_DATASET_CONFIG)
+    print(f"[DEBUG] SCENE_DATASET_CONFIG: {SCENE_DATASET_CONFIG}")
+    print(f"[DEBUG] Absolute Config Path: {abs_config_path}")
+    if os.path.exists(abs_config_path):
+        print(f"[DEBUG] Config file FOUND.")
+    else:
+        print(f"[DEBUG] Config file NOT FOUND at {abs_config_path}")
+
+    # Manual check for the scene file to help debug path issues
+    expected_scene_path = os.path.join(SCENES_ROOT, scene_name, f"{scene_id_short}.basis.glb")
+    abs_scene_path = os.path.abspath(expected_scene_path)
+    print(f"[DEBUG] Checking if scene file exists at: {abs_scene_path}")
+    if os.path.exists(abs_scene_path):
+        print(f"[DEBUG] Scene file FOUND.")
+    else:
+        print(f"[DEBUG] Scene file NOT FOUND. Check your SCENES_ROOT.")
+
     sim_cfg = habitat_sim.SimulatorConfiguration()
     sim_cfg.scene_dataset_config_file = SCENE_DATASET_CONFIG
     
-    # 关键点：habitat-sim 加载 semantic 通常依赖 .scene_instance.json 或直接指定 .basis.glb
-    # 如果只指定 glb，元数据加载器可能找不到关联的 .semantic.glb
-    # 如果指定 scene handle (例如 "TEEsavR23oF")，则依赖 dataset config
-    
-    # 根据 test_layout.py:
-    #   sim_cfg.scene_id = scene_id  (其中 scene_id 是短名 "TEEsavR23oF")
-    #   SCENE_DATASET_CONFIG 指向 hm3d_annotated_basis.scene_dataset_config.json
-    
-    # 所以如果你正确配置了 SCENE_DATASET_CONFIG，你应该只需要传短 ID
+    # Passing the short ID relies on the dataset config to map the ID to the file path.
+    print(f"[DEBUG] Setting sim_cfg.scene_id = {scene_id_short}")
     sim_cfg.scene_id = scene_id_short
     
     sim_cfg.enable_physics = False
     sim_cfg.gpu_device_id = 0
     sim_cfg.load_semantic_mesh = True
-    
-    # 强制覆盖场景路径搜索（如果不生效）
-    # sim_cfg.override_scene_light_defaults = True
+    print(f"[DEBUG] load_semantic_mesh set to True")
     
     agent_cfg = habitat_sim.agent.AgentConfiguration()
     return habitat_sim.Configuration(sim_cfg, [agent_cfg])
@@ -214,8 +221,17 @@ def extract_habitat_semantics_info(scene_name):
         
         if not semantic_scene:
             sim.close()
+            print(f"[ERROR] Failed to load semantic scene for {scene_name}. Semantic scene is None/Empty.")
+            # 尝试通过元数据获取具体的错误信息
+            active_scene_graph = sim.get_active_scene_graph()
+            root_node = active_scene_graph.get_root_node()
+            print(f"[DEBUG] Root node valid: {root_node.is_valid()}")
+            metadata = sim.metadata_mediator
+            # scene_attributes = metadata.get_scene_attributes(scene_id) # API depends on version
+            print(f"[DEBUG] Active Semantic Scene ID: {sim.semantic_scene.id if sim.semantic_scene else 'None'}")
             return entries, False
 
+        print(f"[DEBUG] Semantic Scene Loaded Successfully. Objects count: {len(semantic_scene.objects)}")
         # Iterate directly over habitat semantic objects
         for obj in semantic_scene.objects:
             if obj is None:
