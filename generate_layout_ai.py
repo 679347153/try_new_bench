@@ -195,8 +195,9 @@ def make_sim_cfg(scene_name):
     sim_cfg.scene_dataset_config_file = SCENE_DATASET_CONFIG
     
     # Passing the short ID relies on the dataset config to map the ID to the file path.
-    print(f"[DEBUG] Setting sim_cfg.scene_id = {scene_id_short}")
-    sim_cfg.scene_id = scene_id_short
+    # FIX: Use the full path matching the handles registered by the dataset config.
+    print(f"[DEBUG] Setting sim_cfg.scene_id = {expected_scene_path}")
+    sim_cfg.scene_id = expected_scene_path
     
     sim_cfg.enable_physics = False
     sim_cfg.gpu_device_id = 0
