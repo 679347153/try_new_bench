@@ -25,6 +25,7 @@ def make_cfg(settings):
         sim_cfg.scene_dataset_config_file = settings["scene_dataset_config_file"]
     sim_cfg.scene_id = settings["scene"]
     sim_cfg.enable_physics = True
+    sim_cfg.load_semantic_mesh = True
 
     # Note: all sensors must have the same resolution
     sensor_specs = []
@@ -103,17 +104,18 @@ def main():
             dirs.sort()
             files.sort()
             
-            # Prioritize basis.glb over scene_instance.json for better semantic loading support
-            # (Scene instances sometimes don't link semantics correctly in all dataset versions)
             basis_file = next((f for f in files if f.endswith(".basis.glb")), None)
             instance_file = next((f for f in files if f.endswith(".scene_instance.json")), None)
-            
-            # Prefer basis file
-            target_file = basis_file if basis_file else instance_file
+
+            # Prefer a scene instance when available because it preserves stage/object bindings
+            # and avoids Habitat falling back to missing .scn/info_semantic.json descriptors.
+            target_file = instance_file if instance_file else basis_file
             
             if target_file:
-                # Check if corresponding semantic file exists (strict check)
+                # Check if the matching semantic mesh exists beside the stage asset.
                 scene_name = target_file.split('.')[0]
+                if target_file.endswith(".scene_instance.json") and basis_file:
+                    scene_name = basis_file.split(".")[0]
                 semantic_file = f"{scene_name}.semantic.glb"
                 if semantic_file in files:
                     print(f"Verified semantic file exists: {semantic_file}")
@@ -135,14 +137,19 @@ def main():
         # Try finding the specific file we know exists
         potential_path = os.path.join("data", "scene_datasets", "hm3d_new", "hm3d", "val", "00800-TEEsavR23oF", "TEEsavR23oF.basis.glb")
         if os.path.exists(potential_path):
-            scene_path = potential_path
+            scene_dir = os.path.dirname(potential_path)
+            scene_stem = os.path.basename(potential_path).split(".")[0]
+            instance_path = os.path.join(scene_dir, f"{scene_stem}.scene_instance.json")
+            scene_path = instance_path if os.path.exists(instance_path) else potential_path
         
         if not scene_path:
             # Fallback to recursively searching for any .basis.glb
             for root, dirs, files in os.walk(base_data_path):
                 for file in files:
                     if file.endswith(".basis.glb"):
-                        scene_path = os.path.join(root, file)
+                        scene_stem = file.split(".")[0]
+                        instance_path = os.path.join(root, f"{scene_stem}.scene_instance.json")
+                        scene_path = instance_path if os.path.exists(instance_path) else os.path.join(root, file)
                         break
                 if scene_path:
                     break
