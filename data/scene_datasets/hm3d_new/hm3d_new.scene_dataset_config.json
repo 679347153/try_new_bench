@@ -1,6 +1,9 @@
 {
   "stages": {
     "paths": {
+      ".stage_config.json": [
+        "hm3d/val/00800-TEEsavR23oF/*.stage_config.json"
+      ],
       ".glb": [
         "hm3d/val/00800-TEEsavR23oF/*.basis.glb",
         "hm3d/val/00802-wcojb4TFT35/*.basis.glb",

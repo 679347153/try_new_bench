@@ -1,0 +1,36 @@
+{
+  "render_asset": "TEEsavR23oF.basis.glb",
+  "collision_asset": "TEEsavR23oF.basis.glb",
+  "semantic_asset": "TEEsavR23oF.semantic.glb",
+  "semantic_descriptor_filename": "TEEsavR23oF.semantic.txt",
+  "nav_asset": "TEEsavR23oF.basis.navmesh",
+  "up": [
+    0,
+    0,
+    1
+  ],
+  "front": [
+    0,
+    1,
+    0
+  ],
+  "semantic_up": [
+    0,
+    0,
+    1
+  ],
+  "semantic_front": [
+    0,
+    1,
+    0
+  ],
+  "origin": [
+    0,
+    0,
+    0
+  ],
+  "shader_type": "flat",
+  "force_flat_shading": false,
+  "units_to_meters": 1.0,
+  "has_semantic_textures": false
+}
